@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>额度查询 · como71</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            background-image: url('bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px 60px;
+        }
+
+        /* 顶部留白 + logo */
+        .header {
+            padding-top: 12vh;
+            padding-bottom: 36px;
+            text-align: center;
+        }
+        .header .logo {
+            font-family: 'Great Vibes', cursive;
+            font-size: 42px;
+            color: rgba(255,255,255,0.85);
+            text-shadow: 0 2px 16px rgba(0,0,0,0.25);
+            letter-spacing: 3px;
+        }
+        .header .sub {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 6px;
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        /* 查询主卡片 */
+        .card {
+            background: rgba(30, 60, 40, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 22px;
+            padding: 36px 32px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+
+        .card h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 24px;
+            letter-spacing: 6px;
+            text-align: center;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .card input {
+            flex: 1;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            font-family: monospace;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .card input::placeholder { color: rgba(255,255,255,0.3); }
+        .card input:focus { border-color: rgba(255,255,255,0.45); }
+
+        .card button {
+            padding: 14px 22px;
+            background: rgba(255,255,255,0.13);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: "Noto Sans SC", sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 3px;
+            white-space: nowrap;
+        }
+        .card button:hover { background: rgba(255,255,255,0.25); }
+        .card button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .result {
+            margin-top: 24px;
+            padding: 24px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 14px;
+            display: none;
+        }
+        .result.show { display: block; }
+
+        .balance-label {
+            font-size: 12px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+        }
+        .balance-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .balance-unit {
+            font-size: 16px;
+            color: rgba(255,255,255,0.5);
+            margin-left: 4px;
+        }
+        .stats {
+            margin-top: 16px;
+            display: flex;
+            gap: 20px;
+        }
+        .stat-item { flex: 1; }
+        .stat-label {
+            font-size: 11px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 2px;
+            letter-spacing: 1px;
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.75);
+        }
+        .unlimited-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+        .error-text {
+            color: #ffb3b3;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* 模型区域 */
+        .models-section {
+            margin-top: 32px;
+            width: 100%;
+            max-width: 440px;
+        }
+        .models-section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            letter-spacing: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+        }
+
+        .model-group {
+            background: rgba(30, 60, 40, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 12px;
+        }
+        .model-provider {
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        .model-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .model-tag {
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.7);
+            font-family: monospace;
+        }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-family: 'Great Vibes', cursive;
+            font-size: 20px;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 2px;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.15);
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .header { padding-top: 8vh; }
+            .header .logo { font-size: 32px; }
+            .card { padding: 28px 22px; }
+            .card h1 { font-size: 18px; }
+            .balance-value { font-size: 28px; }
+            .model-group { padding: 16px 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+
+        <div class="header">
+            <div class="logo">como71</div>
+            <div class="sub">API SERVICE</div>
+        </div>
+
+        <div class="card">
+            <h1>额 度 查 询</h1>
+            <div class="input-row">
+                <input type="text" id="apiKey" placeholder="请输入 API Key">
+                <button id="queryBtn" onclick="query()">查 询</button>
+            </div>
+            <div class="result" id="result"></div>
+        </div>
+
+        <div class="models-section">
+            <h2>支 持 模 型</h2>
+
+            <div class="model-group">
+                <div class="model-provider">ChatGPT</div>
+                <div class="model-tags">
+                    <span class="model-tag">GPT-5.1</span>
+                    <span class="model-tag">GPT-5.2</span>
+                    <span class="model-tag">GPT-5.3</span>
+                    <span class="model-tag">GPT-5.4</span>
+                </div>
+            </div>
+
+            <div class="model-group">
+                <div class="model-provider">Claude</div>
+                <div class="model-tags">
+                    <span class="model-tag">Claude-4.1</span>
+                    <span class="model-tag">Claude-4.5</span>
+                    <span class="model-tag">Claude-4.6</span>
+                </div>
+            </div>
+
+            <div class="model-group">
+                <div class="model-provider">Gemini</div>
+                <div class="model-tags">
+                    <span class="model-tag">Gemini-2.5</span>
+                    <span class="model-tag">Gemini-3.0</span>
+                    <span class="model-tag">Gemini-3.1</span>
+                </div>
+            </div>
+
+            <div class="model-group">
+                <div class="model-provider">Grok</div>
+                <div class="model-tags">
+                    <span class="model-tag">Grok-3</span>
+                    <span class="model-tag">Grok-4</span>
+                    <span class="model-tag">Grok-4.2</span>
+                </div>
+            </div>
+
+            <div class="model-group">
+                <div class="model-provider">DeepSeek</div>
+                <div class="model-tags">
+                    <span class="model-tag">DS-3.2</span>
+                </div>
+            </div>
+
+            <div class="model-group">
+                <div class="model-provider">Kimi</div>
+                <div class="model-tags">
+                    <span class="model-tag">Kimi-2</span>
+                    <span class="model-tag">Kimi-2.5</span>
+                </div>
+            </div>
+
+            <div class="model-group">
+                <div class="model-provider">Qwen</div>
+                <div class="model-tags">
+                    <span class="model-tag">Qwen-3</span>
+                    <span class="model-tag">Qwen-3.5</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">como71</div>
+    </div>
+
+    <script>
+        const API_BASE = "https://once.novai.su";
+        const UNLIMITED_THRESHOLD = 9999;
+
+        async function query() {
+            const key = document.getElementById("apiKey").value.trim();
+            const btn = document.getElementById("queryBtn");
+            const result = document.getElementById("result");
+
+            if (!key) { showError("请输入 API Key"); return; }
+
+            btn.disabled = true;
+            btn.textContent = "查询中...";
+            result.className = "result";
+
+            try {
+                const headers = { "Authorization": "Bearer " + key };
+
+                const [subResp, usageResp] = await Promise.all([
+                    fetch(API_BASE + "/v1/dashboard/billing/subscription", { headers }),
+                    fetch(API_BASE + "/v1/dashboard/billing/usage?start_date=2024-01-01&end_date=2026-12-31", { headers })
+                ]);
+
+                if (!subResp.ok || !usageResp.ok) throw new Error("Key 无效或已过期");
+
+                const subData = await subResp.json();
+                const usageData = await usageResp.json();
+
+                const total = subData.hard_limit_usd || 0;
+                const used = usageData.total_usage || 0;
+                const isUnlimited = total > UNLIMITED_THRESHOLD;
+
+                if (isUnlimited) {
+                    result.innerHTML =
+                        '<div class="balance-label">已使用</div>' +
+                        '<div class="balance-value">' + used.toFixed(2) + '<span class="balance-unit">$</span></div>' +
+                        '<div class="unlimited-tag">无限额令牌</div>';
+                } else {
+                    const remaining = Math.max(0, total - used);
+                    result.innerHTML =
+                        '<div class="balance-label">剩余额度</div>' +
+                        '<div class="balance-value">' + remaining.toFixed(2) + '<span class="balance-unit">$</span></div>' +
+                        '<div class="stats">' +
+                            '<div class="stat-item"><div class="stat-label">总额度</div><div class="stat-value">' + total.toFixed(2) + ' $</div></div>' +
+                            '<div class="stat-item"><div class="stat-label">已使用</div><div class="stat-value">' + used.toFixed(2) + ' $</div></div>' +
+                        '</div>';
+                }
+
+                result.className = "result show";
+
+            } catch (e) { showError(e.message); }
+
+            btn.disabled = false;
+            btn.textContent = "查 询";
+        }
+
+        function showError(msg) {
+            const result = document.getElementById("result");
+            result.className = "result show";
+            result.innerHTML = '<div class="error-text">' + msg + '</div>';
+        }
+
+        document.getElementById("apiKey").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") query();
+        });
+    </script>
+</body>
+</html>
